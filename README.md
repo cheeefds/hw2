@@ -5,7 +5,6 @@
 * 完整程式實作：[`dataset.ipynb`](./dataset.ipynb)
 * 原始資料集：[`sales_data.csv`](./sales_data.csv)
 * ChatGPT 對話紀錄 PDF：[`ChatGPT-需求預測與特徵選擇-20261007-1014.pdf`](./ChatGPT-需求預測與特徵選擇-20261007-1014.pdf)
-* ChatGPT 線上對話備用連結：[ChatGPT 線上對話紀錄](https://chatgpt.com/c/6ac5a4b3-ca04-83e8-b43b-1fbce5c0ed52)
 
 ---
 
@@ -14,7 +13,7 @@
 | 評分大項 | 配分比重 | 評分指標細項 | 專案實作與報告對應章節 |
 | :--- | :---: | :--- | :--- |
 | **一、文件說明** | **50%** | **CRISP-DM 流程完整且邏輯清楚 (25%)** | [第二章：CRISP-DM 六大分析階段](#二crisp-dm-六大分析階段)（第一至七節完整覆蓋） |
-| | | **包含 GPT 對話與 NotebookLM 摘要 (15%)** | [第八節：GPT 對話紀錄與討論摘要](#8-gpt-conversation-對話紀錄與連結)（已附 [`ChatGPT-需求預測與特徵選擇-20261007-1014.pdf`](./ChatGPT-需求預測與特徵選擇-20261007-1014.pdf)）<br>[第九節：NotebookLM 核心摘要](#9-notebooklm-知識脈絡與摘要整理) |
+| | | **包含 GPT 對話與 NotebookLM 摘要 (15%)** | [第八節：GPT 對話紀錄與討論摘要](#8-gpt-conversation-對話紀錄與連結)（已附 [`ChatGPT-需求預測與特徵選擇-20261007-1014.pdf`](./ChatGPT-需求預測與特徵選擇-20261007-1014.pdf)）<br>[第九節：NotebookLM 研究摘要](#notebooklm-研究摘要) |
 | | | **明確說明資料集來源與研究脈絡 (10%)** | [第一章：資料集來源與研究脈絡](#一資料集來源與研究脈絡)<br>[2.1 Business Understanding](#1-business-understanding-商業理解) |
 | **二、結果呈現** | **50%** | **模型正確可執行，具特徵選擇與評估 (25%)** | [2.4 Feature Selection](#4-feature-selection-特徵選擇)<br>[2.5 Modeling](#5-modeling-模型建置與訓練)<br>[2.6 Evaluation](#6-evaluation-模型評估成果) |
 | | | **結果合理、美觀且具有說服力 (15%)** | [2.6 係數解讀](#2-重點回歸係數解析-ols-coefficients)<br>[2.7 預測視覺化與預測區間](#62-預測圖表呈現與不確定性分析) |
@@ -34,7 +33,7 @@
    * [7. Deployment (部署規劃與落地應用)](#7-deployment-模型部署與決策應用)
 3. [GPT 對話與 NotebookLM 摘要](#三gpt-對話與-notebooklm-摘要)
    * [8. GPT Conversation (對話紀錄與連結)](#8-gpt-conversation-對話紀錄與連結)
-   * [9. NotebookLM Summary (知識脈絡整理)](#9-notebooklm-知識脈絡與摘要整理)
+   * [9. NotebookLM 研究摘要](#notebooklm-研究摘要)
 4. [結論與商業洞察](#四結論與商業洞察)
 5. [執行環境與重現步驟](#五執行環境與重現步驟)
 
@@ -265,13 +264,20 @@
 
 ---
 
-### 9. NotebookLM 知識脈絡與摘要整理
+## NotebookLM 研究摘要
 
-為強化研究架構之理論深度，專案透過 **Google NotebookLM** 匯入零售庫存文獻、時間序列與多元線性回歸比較文獻進行深度語意提煉：
-1. **多元線性回歸 vs. 自回歸 (Auto-Regression)**：
-   * 本資料集缺少高頻連續時間戳記（原始 Date 僅代表觀測日，且同一日期存在多個商店與品項平行紀錄），非標準單一時間序列，故採用**多元線性回歸 (Multiple Linear Regression)** 能更有效捕捉促銷、天氣、庫存等多維外生變數之交互影響。
-2. **預測區間在營運決策的價值**：
-   * NotebookLM 摘要指出：在供應鏈管理中，單一點估計（Point Estimate）往往導致「牛鞭效應（Bullwhip Effect）」；引入 95% 預測區間能提供波動風險邊界，作為動態安全庫存策略之量化依據。
+本資料集專注於**零售門市庫存與需求預測分析（Retail Store Inventory and Demand Forecasting Analysis）**[1][2]，主要特點與核心分析摘要如下：
+
+1. **資料規模與變數架構**：
+- 資料集包含 **76,000 筆每日銷售紀錄**（涵蓋 2022 年 1 月 1 日至 2024 年 1 月 30 日，共 760 天）[3]。
+- 涵蓋 5 家門市（S001～S005）[5][6]、20 種產品（P0001～P0020）[5][6]、5 大產品品類（雜貨 Groceries、家具 Furniture、服飾 Clothing、玩具 Toys、電子 Electronics）[6][7] 及 4 大區域[7][8]。
+- 主要特點變數包含銷售量（Units Sold）、庫存水準（Inventory Level）、訂購量（Units Ordered）、產品價格、折扣、天氣狀況、促銷活動（Promotion）及流行病影響（Epidemic）等[1][9]。
+1. **探索性資料分析（EDA）重點**：
+- **促銷與折價效應**：促銷活動（Promotion）及折扣（Discount）能顯著提升產品銷售量與需求[10]；而流行病（Epidemic）事件則會對需求產生顯著負面抑低效果[10]。
+- **品類與季節特徵**：在所有產品品類中，**雜貨（Groceries）** 擁有最高的平均需求量與庫存規模[7]，而 **家具（Furniture）** 的平均需求最低[15]。在季節與天氣影響上，**夏季（Summer）** 與 **晴天（Sunny）** 通常帶來更高的平均銷售表現[12]。
+1. **預測模型與評估比對**：
+- 專案分析並比對了多種時間序列與機器學習模型，包括傳統統計模型（ARIMA、SARIMA、ETS、Prophet）[18]、機器學習模型（XGBoost、HistGradientBoosting / HGB、Ridge）[22]、深度學習模型（單變量與多變量 LSTM）[26][27] 以及預訓練時間序列大模型（Chronos-Bolt, Chronos-2）[28][29]。
+- 實驗結果顯示，納入促銷、價格與庫存等外生變數的 **多變量模型（如 HGB、多變量 LSTM）** 以及 **Chronos 與 HGB 的集成模型（Ensemble）** 在多步時間序列預測（Horizon 7、14、28 天）中表現最佳，能大幅降低預測誤差（MAE, RMSE, MAPE%）並精準捕捉需求波動[30]。
 
 ---
 
