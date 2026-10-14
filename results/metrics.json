@@ -1,0 +1,63 @@
+{
+  "dataset": {
+    "rows": 76000,
+    "columns": 16,
+    "candidate_features": 14,
+    "train_rows": 60800,
+    "test_rows": 15200,
+    "random_state": 42
+  },
+  "selected_features": [
+    "Units Sold",
+    "Units Ordered",
+    "Epidemic",
+    "Category_Furniture",
+    "Category_Groceries",
+    "Promotion",
+    "Discount",
+    "Weather Condition_Sunny",
+    "Inventory Level",
+    "Weather Condition_Rainy",
+    "Seasonality_Summer",
+    "Category_Toys",
+    "Product ID_P0020",
+    "Weather Condition_Snowy",
+    "Seasonality_Spring",
+    "Product ID_P0009",
+    "Product ID_P0012",
+    "Product ID_P0017",
+    "Product ID_P0013",
+    "Category_Electronics"
+  ],
+  "models": {
+    "Mean baseline": {
+      "feature_count": 0,
+      "MAE": 37.04164861495845,
+      "RMSE": 46.994848881541174,
+      "R2": -3.0133924244779564e-08
+    },
+    "Linear regression - all features": {
+      "feature_count": 44,
+      "MAE": 16.266018405894087,
+      "RMSE": 21.813802662835343,
+      "R2": 0.7845421815222919
+    },
+    "Linear regression - top 20": {
+      "feature_count": 20,
+      "MAE": 16.551093080228306,
+      "RMSE": 22.201103018354377,
+      "R2": 0.7768234280648879
+    }
+  },
+  "ols": {
+    "R2_train": 0.7701375193530287,
+    "Adjusted_R2_train": 0.7700618805696835,
+    "F_statistic": 10181.780897215442,
+    "F_pvalue": 0.0
+  },
+  "prediction_interval": {
+    "confidence_level": 0.95,
+    "coverage": 0.9559868421052632,
+    "mean_width": 88.28151225283816
+  }
+}

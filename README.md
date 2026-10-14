@@ -1,305 +1,203 @@
-# 零售門市需求預測：CRISP-DM 多元線性回歸分析與評估報告
+# 7115056075 HW2：零售需求多元線性回歸
 
-本專案基於 Kaggle 公開資料集 **Retail Store Inventory and Demand Forecasting**，遵循標準 **CRISP-DM (Cross-Industry Standard Process for Data Mining)** 資料探勘流程，針對零售商品需求量（Demand）建構**多元線性回歸（Multiple Linear Regression）**預測模型。模型結合特徵選擇（Feature Selection）與 95% 預測區間（Prediction Interval）估計。
+本作業使用 Kaggle 的 **Retail Store Inventory and Demand Forecasting** 合成資料，依照 CRISP-DM 完成資料理解、資料準備、前 20 名特徵選擇、多元線性回歸、模型評估與部署規劃。
 
-* 完整程式實作：[`dataset.ipynb`](./dataset.ipynb)
-* 原始資料集：[`sales_data.csv`](./sales_data.csv)
-* ChatGPT 對話紀錄 PDF：[`ChatGPT-需求預測與特徵選擇-20261007-1014.pdf`](./ChatGPT-需求預測與特徵選擇-20261007-1014.pdf)
+## 主要檔案
 
----
+- 主程式：[`7115056075_hw2.ipynb`](./7115056075_hw2.ipynb)
+- 報告：[`7115056075_hw2_report.pdf`](./7115056075_hw2_report.pdf)
+- GPT 對話：[`ChatGPT-需求預測與特徵選擇-20261007-1014.pdf`](./ChatGPT-需求預測與特徵選擇-20261007-1014.pdf)
+- 原始資料：[`sales_data.csv`](./sales_data.csv)
+- 可重建腳本：[`scripts/build_hw2_notebook.py`](./scripts/build_hw2_notebook.py)
 
-## 評分標準對應檢核表 (Grading Rubrics Alignment)
+## 資料來源與研究限制
 
-| 評分大項 | 配分比重 | 評分指標細項 | 專案實作與報告對應章節 |
-| :--- | :---: | :--- | :--- |
-| **一、文件說明** | **50%** | **CRISP-DM 流程完整且邏輯清楚 (25%)** | [第二章：CRISP-DM 六大分析階段](#二crisp-dm-六大分析階段)（第一至七節完整覆蓋） |
-| | | **包含 GPT 對話與 NotebookLM 摘要 (15%)** | [第八節：GPT 對話紀錄與討論摘要](#8-gpt-conversation-對話紀錄與連結)（已附 [`ChatGPT-需求預測與特徵選擇-20261007-1014.pdf`](./ChatGPT-需求預測與特徵選擇-20261007-1014.pdf)）<br>[第九節：NotebookLM 研究摘要](#notebooklm-研究摘要) |
-| | | **明確說明資料集來源與研究脈絡 (10%)** | [第一章：資料集來源與研究脈絡](#一資料集來源與研究脈絡)<br>[2.1 Business Understanding](#1-business-understanding-商業理解) |
-| **二、結果呈現** | **50%** | **模型正確可執行，具特徵選擇與評估 (25%)** | [2.4 Feature Selection](#4-feature-selection-特徵選擇)<br>[2.5 Modeling](#5-modeling-模型建置與訓練)<br>[2.6 Evaluation](#6-evaluation-模型評估成果) |
-| | | **結果合理、美觀且具有說服力 (15%)** | [2.6 係數解讀](#2-重點回歸係數解析-ols-coefficients)<br>[2.7 預測視覺化與預測區間](#62-預測圖表呈現與不確定性分析) |
-| | | **預測結果評估 (預測圖、評估指標) (10%)** | 附圖 1：`actual_vs_predicted.png`<br>附圖 2：`demand_prediction_interval.png`<br>指標：MAE=16.27, RMSE=21.82, R²=0.7844 |
+- Kaggle：[Retail Store Inventory and Demand Forecasting](https://www.kaggle.com/datasets/atomicd/retail-store-inventory-and-demand-forecasting)
+- 資料規模：76,000 筆、16 欄，其中 `Demand` 為預測目標、`Date` 不納入本次橫斷面回歸，候選原始特徵共 14 個。
+- Kaggle 頁面標示此資料為合成資料，因此結果適合教學與方法展示，不能直接視為真實商店的營運成效。
+- `Units Sold` 與 `Demand` 的業務定義可能互相接近；本作業保留它以符合預測任務，但不把係數解讀為因果關係。
 
----
+## 實驗結果
 
-## 目錄
-1. [資料集來源與研究脈絡](#一資料集來源與研究脈絡)
-2. [CRISP-DM 六大分析階段](#二crisp-dm-六大分析階段)
-   * [1. Business Understanding (商業理解)](#1-business-understanding-商業理解)
-   * [2. Data Understanding (資料理解)](#2-data-understanding-資料理解)
-   * [3. Data Preparation (資料準備與特徵工程)](#3-data-preparation-資料準備與特徵工程)
-   * [4. Feature Selection (特徵選擇)](#4-feature-selection-特徵選擇)
-   * [5. Modeling (模型建置與訓練)](#5-modeling-模型建置與訓練)
-   * [6. Evaluation (模型評估與視覺化)](#6-evaluation-模型評估成果)
-   * [7. Deployment (部署規劃與落地應用)](#7-deployment-模型部署與決策應用)
-3. [GPT 對話與 NotebookLM 摘要](#三gpt-對話與-notebooklm-摘要)
-   * [8. GPT Conversation (對話紀錄與連結)](#8-gpt-conversation-對話紀錄與連結)
-   * [9. NotebookLM 研究摘要](#notebooklm-研究摘要)
-4. [結論與商業洞察](#四結論與商業洞察)
-5. [執行環境與重現步驟](#五執行環境與重現步驟)
+資料先以 `random_state=42` 切成 80% 訓練集（60,800 筆）及 20% 測試集（15,200 筆）。前處理器與 `SelectKBest(f_regression, k=20)` 僅在訓練集擬合，以避免資料洩漏。
 
----
+| 模型 | 特徵數 | MAE | RMSE | R² |
+|---|---:|---:|---:|---:|
+| 平均值基準模型 | 0 | 37.04 | 46.99 | -0.0000 |
+| 全部編碼後特徵線性回歸 | 44 | 16.27 | 21.81 | 0.7845 |
+| 前 20 名特徵線性回歸 | 20 | **16.55** | **22.20** | **0.7768** |
 
-## 一、資料集來源與研究脈絡
+前 20 名模型只使用 20 個欄位，測試集表現與 44 個欄位模型接近；95% 預測區間實際涵蓋率為 **95.60%**，平均寬度為 88.28。涵蓋率接近名目值，但區間仍偏寬，表示單筆需求具有不可忽略的不確定性。
 
-### 1. 資料來源與公開連結
-* **資料集名稱**：Retail Store Inventory and Demand Forecasting
-* **平台來源**：Kaggle
-* **公開資料連結**：[Kaggle Dataset: Retail Store Inventory and Demand Forecasting](https://www.kaggle.com/datasets/atomicd/retail-store-inventory-and-demand-forecasting)
-* **本地資料集**：[`sales_data.csv`](./sales_data.csv)
-* **樣本規模**：76,000 筆交易觀測值
+核心結果：**MAE = 16.55、RMSE = 22.20、R² = 0.7768**。
 
-### 2. 特徵規模與定義
-資料集共包含 **16 個欄位**（1 個預測目標 `Demand`、1 個日期欄位 `Date`、**14 個候選特徵**，符合 10 至 20 個特徵之要求）：
+前 20 名特徵依 F-score 排序為：`Units Sold`、`Units Ordered`、`Epidemic`、`Category_Furniture`、`Category_Groceries`、`Promotion`、`Discount`、`Weather Condition_Sunny`、`Inventory Level`、`Weather Condition_Rainy`、`Seasonality_Summer`、`Category_Toys`、`Product ID_P0020`、`Weather Condition_Snowy`、`Seasonality_Spring`、`Product ID_P0009`、`Product ID_P0012`、`Product ID_P0017`、`Product ID_P0013`、`Category_Electronics`。
 
-| 欄位名稱 | 變數類型 | 資料型態 | 業務意涵與說明 |
-| :--- | :--- | :--- | :--- |
-| **Demand** | **目標變數 (Target)** | 數值型 (整數) | 當期商品市場總需求量（最終預測目標） |
-| `Date` | 輔助欄位 | 日期字串 | 銷售記錄日期（前處理階段排除） |
-| `Store ID` | 識別型類別特徵 | 字串 (5 類) | 門市代碼 (S001 ~ S005) |
-| `Product ID` | 識別型類別特徵 | 字串 (20 類) | 商品代碼 (P0001 ~ P0020) |
-| `Category` | 業務類別特徵 | 字串 (5 類) | 商品類別 (Groceries, Furniture, Clothing, Toys, Electronics) |
-| `Region` | 地理類別特徵 | 字串 (4 類) | 門市區域 (North, South, East, West) |
-| `Weather Condition` | 環境類別特徵 | 字串 (4 類) | 天氣狀態 (Cloudy, Sunny, Rainy, Snowy) |
-| `Seasonality` | 時間週期特徵 | 字串 (4 類) | 季節特性 (Winter, Spring, Summer, Autumn) |
-| `Inventory Level` | 數值特徵 (Continuous) | 浮點數/整數 | 當前門市庫存水位 |
-| `Units Sold` | 數值特徵 (Continuous) | 浮點數/整數 | 實際已售出之商品數量 |
-| `Units Ordered` | 數值特徵 (Continuous) | 浮點數/整數 | 門市進貨/訂貨數量 |
-| `Price` | 數值特徵 (Continuous) | 浮點數 | 商品售價 |
-| `Discount` | 數值特徵 (Continuous) | 浮點數 | 促銷折扣比例 (%) |
-| `Competitor Pricing` | 數值特徵 (Continuous) | 浮點數 | 競爭對手之市場定價 |
-| `Promotion` | 二元特徵 (Binary) | 0 / 1 | 該品項當期是否進行宣傳促銷 |
-| `Epidemic` | 二元特徵 (Binary) | 0 / 1 | 當期是否受疫情衝擊影響 |
+![實際值與預測值](./results/actual_vs_predicted.png)
 
----
+![95% 預測區間](./results/prediction_interval.png)
 
-## 二、CRISP-DM 六大分析階段
+## CRISP-DM 流程
 
-```
-                  ┌─────────────────────────────┐
-                  │ 1. Business Understanding   │
-                  │   預測商品需求量，降低庫存風險  │
-                  └──────────────┬──────────────┘
-                                 ▼
-                  ┌─────────────────────────────┐
-                  │ 2. Data Understanding       │
-                  │   76k 筆、分布檢定、無缺失值  │
-                  └──────────────┬──────────────┘
-                                 ▼
-                  ┌─────────────────────────────┐
-                  │ 3. Data Preparation         │
-                  │   MinMaxScaler、One-Hot 編碼 │
-                  │   ID 探討、80/20 Train-Test │
-                  └──────────────┬──────────────┘
-                                 ▼
-                  ┌─────────────────────────────┐
-                  │ 4. Feature Selection        │
-                  │   SelectKBest (F-test, p<.05)│
-                  │   選出 41 個顯著關鍵特徵     │
-                  └──────────────┬──────────────┘
-                                 ▼
-                  ┌─────────────────────────────┐
-                  │ 5. Modeling                 │
-                  │   Multiple Linear Regression│
-                  │   statsmodels OLS 統計推論  │
-                  └──────────────┬──────────────┘
-                                 ▼
-                  ┌─────────────────────────────┐
-                  │ 6. Evaluation               │
-                  │   MAE=16.27, R²=0.7844      │
-                  │   Actual vs Pred & 95% PI 圖│
-                  └──────────────┬──────────────┘
-                                 ▼
-                  ┌─────────────────────────────┐
-                  │ 7. Deployment               │
-                  │   落地整合安全庫存與補貨決策 │
-                  └─────────────────────────────┘
-```
+CRISP-DM（Cross-Industry Standard Process for Data Mining，跨產業資料探勘標準流程）不是只能依序執行一次的直線流程。分析人員在評估模型後，可能重新檢查商業問題、修改資料準備方式或更換模型。本作業依序說明六個階段，並將每一階段的目的、實際操作及產出對應到本次零售需求預測。
 
-### 1. Business Understanding (商業理解)
-* **商業背景**：零售企業面臨雙重庫存風險——過量庫存導致倉儲成本暴增與資金積壓；缺貨則引發銷售損失與顧客滿意度下滑。
-* **研究問題**：如何根據銷售量、進貨量、定價、折扣、促銷活動、庫存水位，並結合外在天氣、季節及疫情等因子，建立精確的商品需求量（Demand）預測模型？
-* **應用目標**：提供具有預測區間（Prediction Interval）的客觀估計，協助採購管理人員動態設定安全庫存與補貨閾值。
+### 1. Business Understanding（商業理解）
 
----
+#### 分析目標
 
-### 2. Data Understanding (資料理解)
-透過 [`dataset.ipynb`](./dataset.ipynb) 執行資料探索與結構檢驗：
-* **資料規模**：76,000 列 $\times$ 16 行。
-* **資料完整性**：執行 `df.isnull().sum()` 確認全資料集**無缺失值 (Missing Value = 0)**；`df.duplicated().sum()` 確認**無重複資料列**。
-* **目標變數分佈**：`Demand` 平均值為 104.32，標準差 46.96，四分位距為 71 至 133，最大值 430，數值呈現連續且右偏分佈。
-* **特徵型態檢視**：
-  * Continuous：`Inventory Level` (均值 301.1)、`Units Sold` (均值 88.8)、`Units Ordered` (均值 89.1)、`Price` (均值 67.73)、`Discount` (均值 9.09%)、`Competitor Pricing` (均值 69.45)。
-  * Categorical：各門市（S001~S005 各 15,200 筆均勻分布）、20 種商品（各 3,800 筆均勻分布）、5 種商品類別（以 Groceries 30,400 筆為最大宗）。
+零售商必須在庫存成本與缺貨風險之間取得平衡。備貨過多會增加倉儲及滯銷成本，備貨不足則可能造成銷售機會流失。因此，本研究的主要問題是：「能否根據商品、商店、價格、促銷、天氣與庫存等資訊，預測每筆紀錄的 `Demand`？」模型輸出除了需求點預測，也必須提供不確定性範圍，讓使用者知道預測可能產生多大的波動。
 
----
+#### 實際作法
 
-### 3. Data Preparation (資料準備與特徵工程)
+- 將 `Demand` 設為連續型目標變數，問題類型定義為監督式迴歸。
+- 以 Multiple Linear Regression（多元線性回歸）作為主要模型，因為它容易實作，也能呈現各特徵與需求之間的線性關係。
+- 建立平均值基準模型，避免只看單一模型分數而無法判斷模型是否真正具有預測能力。
+- 依作業要求執行特徵選擇，從編碼後欄位中保留 F-score 重要性前 20 名。
+- 使用 MAE、RMSE、R² 與 95% 預測區間作為成功判斷依據。
 
-根據方法論與諮詢探討，本階段落實以下關鍵工程設計：
+#### 階段產出與判讀
 
-#### (1) ID 類別變數的處理決策 (Store ID & Product ID)
-* **禁忌做法**：絕對不能將 `Store ID` 或 `Product ID` 直接編碼為 1, 2, 3... 數值丟入線性回歸，這會引發嚴重的**人為大小假設錯誤**（例如模型會誤認 Store 4 的影響是 Store 2 的兩倍）。
-* **實作決策**：在資料集維度可控（5 間門市、20 種商品）的前提下，將兩者視為名義類別（Nominal Category）進行 **One-Hot Encoding**。其後交由 **Feature Selection (特徵選擇)** 統計檢定客觀評估各 ID 是否具備統計顯著性，避免主觀刪除。
+本階段確立了「可解釋的需求預測」是本次分析重點，而不是建立因果模型。`Units Sold` 與 `Demand` 的業務定義可能接近，因此即使它具有很高的預測重要性，也不能解釋為銷售量增加會直接造成需求增加。模型結果只用於比較預測能力；若要作為真實採購或補貨依據，仍必須使用真實營運資料重新驗證。
 
-#### (2) 數值特徵正規化 (MinMaxScaler)
-* 針對 6 個連續數值特徵（`Inventory Level`、`Units Sold`、`Units Ordered`、`Price`、`Discount`、`Competitor Pricing`）使用 `MinMaxScaler` 縮放至 $[0, 1]$ 區間，消除尺度差異對回歸權重的干擾。
-* **目標變數 `Demand` 保持原值**：不進行 Min-Max 縮放，以保留預測結果的物理單位（件數/需求量），利於後續評估與區間計算。
+### 2. Data Understanding（資料理解）
 
-#### (3) 獨熱編碼 (One-Hot Encoding) 與共線性防範
-* 針對 `Store ID`、`Product ID`、`Category`、`Region`、`Weather Condition`、`Seasonality` 進行 One-Hot 編碼。
-* **設定 `drop_first=True`**：自動排除基準類別（如 Region 以 North 為基準），避免**虛擬變數陷阱 (Dummy Variable Trap)** 與完全多元共線性（Perfect Multicollinearity）。
-* 編碼後特徵空間擴展為 **44 維**（$(76000, 44)$）。
+#### 分析目標
 
-#### (4) 資料集切分 (Train-Test Split)
-* 採用 $80\% : 20\%$ 切分（`random_state=42`）。
-* **訓練集 (Train Set)**：60,800 筆樣本。
-* **測試集 (Test Set)**：15,200 筆獨立未見樣本。
+資料理解階段的目的，是確認資料是否符合研究問題、欄位是否可用，以及是否存在缺失值、重複資料、異常範圍或資料來源限制。這一步能避免在不了解資料的情況下直接建模，導致錯誤解釋。
 
----
+#### 實際作法
 
-### 4. Feature Selection (特徵選擇)
+本研究讀取 `sales_data.csv`，檢查資料列數、欄數、欄位名稱、資料型態、缺失值、重複值及 `Demand` 的敘述統計。原始資料共有 76,000 筆、16 欄，檢查結果為 0 個缺失值與 0 筆完全重複資料。`Demand` 平均值約為 104.32、標準差約為 46.96，最小值為 4，最大值為 430，顯示目標變數具有明顯變動範圍。
 
-#### (1) 選擇方法與準則
-* **統計方法**：使用 `sklearn.feature_selection.SelectKBest` 搭配 `f_regression`。
-* **評估指標**：計算各特徵與目標變數 `Demand` 之間的單變量線性回歸 $F\text{-Score}$ 及對應的 $P\text{-Value}$。
-* **顯著性門檻**：設定顯著水準 $\alpha = 0.05$（保留 $P\text{-Value} < 0.05$ 的特徵）。
+16 個欄位中，`Demand` 是目標變數，`Date` 是日期欄位，其餘 14 個欄位作為原始候選特徵。候選特徵可分成下列三類：
 
-#### (2) 特徵選擇成果與排序
-在 44 個 One-Hot 衍生特徵中，共選出 **41 個統計上具顯著關聯的特徵**：
+- 數值欄位：`Inventory Level`、`Units Sold`、`Units Ordered`、`Price`、`Discount`、`Competitor Pricing`。
+- 類別欄位：`Store ID`、`Product ID`、`Category`、`Region`、`Weather Condition`、`Seasonality`。
+- 二元欄位：`Promotion`、`Epidemic`。
 
-| 排名 | 特徵名稱 (Feature) | F-Score | P-Value | 影響方向與統計意涵 |
-| :---: | :--- | :---: | :---: | :--- |
-| 1 | `Units Sold` | **137,207.43** | $0.0000$ | 最核心驅動因子，銷售量直接反映市場實際需求 |
-| 2 | `Units Ordered` | **21,495.85** | $0.0000$ | 進貨量顯著具前瞻指引性 |
-| 3 | `Epidemic` | **9,303.64** | $0.0000$ | 疫情衝擊具有高度顯著衝擊力 |
-| 4 | `Category_Furniture` | **6,317.22** | $0.0000$ | 家具類別需求模式具高度異質性 |
-| 5 | `Category_Groceries` | **5,583.41** | $0.0000$ | 民生雜貨日常剛需特徵極顯著 |
-| 6 | `Promotion` | **5,197.68** | $0.0000$ | 促銷檔期對需求拉抬具高度顯著關聯 |
-| 7 | `Discount` | **3,177.43** | $0.0000$ | 折扣幅度直接影響購買量 |
-| 8 | `Weather Condition_Sunny`| **1,417.73** | $< 10^{-300}$ | 晴朗天氣有利於門市客流 |
-| 9 | `Inventory Level` | **972.37** | $< 10^{-210}$ | 現有庫存水位制約銷量與補貨上限 |
-| 10 | `Weather Condition_Rainy`| **700.01** | $< 10^{-150}$ | 陰雨天氣顯著壓抑實體門市需求 |
+#### 階段產出與判讀
 
-* **剔除之不顯著特徵 ($p \ge 0.05$)**：
-  * `Product ID_P0015` ($F=2.02, p=0.1555$)
-  * `Product ID_P0003` ($F=0.44, p=0.5062$)
-  * `Product ID_P0008` ($F=0.02, p=0.8957$)
-  
-> **結論**：透過客觀的 Feature Selection 成功驗證：大部分 Store ID 與 Product ID 確實具有顯著的店型與品項差異，而少數不具顯著區隔度的品項則被乾淨剃除，兼顧特徵完整性與模型簡潔度。
+資料列數足以進行訓練集與測試集切分，且沒有缺失值需要插補。類別欄位不能直接輸入線性回歸，因此後續必須進行 One-Hot Encoding。Kaggle 頁面將此資料標示為合成資料，代表資料適合展示分析流程，但不能直接推論真實零售市場。此外，資料含有日期順序；本作業為符合一般多元線性回歸練習而採隨機切分，但實務預測應改用時間切分。
 
----
+### 3. Data Preparation（資料準備）
 
-### 5. Modeling (模型建置與訓練)
+#### 分析目標
 
-本專案採用兩種互補之回歸建模方案：
-1. **`sklearn.linear_model.LinearRegression`**：
-   * 建立多元線性回歸模型（Multiple Linear Regression），以 41 個篩選特徵對 60,800 筆訓練集樣本進行擬合，並產出測試集點預測值。
-2. **`statsmodels.api.OLS`**：
-   * 補充截距項 `sm.add_constant()`，進行普通最小平方法估計。
-   * 產出詳細統計診斷指標（AIC, BIC, $F\text{-statistic}$, 係數 $t$ 統計量及 $P\text{-value}$）。
-   * 調用 `ols_model.get_prediction().summary_frame(alpha=0.05)`，精確推導單一測試樣本之 95% 預測區間。
+資料準備階段要把原始欄位轉換成模型可接受的數值矩陣，同時防止資料洩漏。資料洩漏是指測試集資訊在訓練過程中被提前使用，會讓評估結果比實際部署表現更樂觀。
 
----
+#### 實際作法
 
-### 6. Evaluation (模型評估成果)
+1. 移除本次橫斷面回歸不使用的 `Date`，並將 `Demand` 與候選特徵分開。
+2. 使用 `train_test_split(test_size=0.2, random_state=42)`，先切出 60,800 筆訓練資料與 15,200 筆測試資料。
+3. 數值欄位使用 `MinMaxScaler`，將不同量尺轉換到一致範圍；目標 `Demand` 保留原始單位，讓 MAE 與 RMSE 可以直接用需求量解釋。
+4. 類別欄位使用 `OneHotEncoder(drop='first', handle_unknown='ignore')`，避免把 Store ID 或 Product ID 誤當成具有大小順序的數值。
+5. `Promotion` 與 `Epidemic` 保留為二元數值；完成轉換後共有 44 個模型欄位。
 
-#### (1) 核心評估指標比較 (測試集 $N=15,200$)
-| 評估指標 | 數值 | 指標定義與解讀 |
-| :--- | :---: | :--- |
-| **MAE** (Mean Absolute Error) | **16.27** | 測試集平均預測需求與實際需求之絕對偏差僅約 16.27 件 |
-| **RMSE** (Root Mean Squared Error) | **21.82** | 衡量大誤差懲罰之均方根誤差，反映模型無嚴重離群失準預測 |
-| **$R^2$** (決定係數) | **0.7844 (78.44%)** | **模型成功解釋了測試集中高達 78.44% 的需求量變異** |
-| **Adjusted $R^2$** (OLS) | **0.7780 (77.80%)** | 懲罰 41 個特徵維度後，整體調整後解釋力仍維持 77.8% |
-| **$F$-statistic** (OLS 全體模型檢定) | **5,594.0** ($p < 0.001$) | 迴歸方程式在統計上高度顯著，非隨機雜訊 |
+前處理器只在訓練集執行 `fit`，再分別轉換訓練集與測試集。特徵名稱也由前處理器匯出，使後續排名、係數與圖表可以追溯回原始欄位。
 
-#### (2) 重點回歸係數解析 (OLS Coefficients)
-* **`Units Sold` ($\beta = +277.01$, $t=238.04$, $p < 0.001$)**：影響力最高之正向變數，銷售速度最直接決定真實需求規模。
-* **`Units Ordered` ($\beta = +78.39$, $t=76.94$, $p < 0.001$)**：門市採購訂貨量每提高一個標準化單位，需求顯著同步增加。
-* **`Price` ($\beta = +34.63$, $t=14.10$)** 與 **`Promotion` ($\beta = +10.11$, $t=32.23$)**：促銷帶動效益明確，且不同定價區間商品具有特定客群需求。
-* **`Epidemic` ($\beta = -17.04$, $t=-69.23$, $p < 0.001$)**：重大外部衝擊變數，疫情期商品需求平均下滑約 17 單位。
-* **`Category_Furniture` ($\beta = -27.25$, $t=-66.31$)**：家具類周轉天數長，相對於基準分類需求顯著較低。
+#### 階段產出與判讀
 
-#### (3) 預測圖表呈現與不確定性分析
+本階段產出可供模型使用的訓練矩陣與測試矩陣。最重要的控制是「先切分、後擬合前處理器」，因此測試集沒有參與縮放範圍、類別集合或特徵選擇。這讓後續測試分數能更合理地代表模型面對未見資料時的表現。
 
-##### 圖一：真實需求量 vs 預測需求量散佈圖 (Actual vs Predicted)
-![Actual vs Predicted Demand](actual_vs_predicted.png)
-* **觀察重點**：橘色虛線代表理想的 $y = x$ 完全預測線。測試集的 15,200 個預測點緊密對稱分佈在 45 度線兩側，驗證了多元線性回歸在此資料集具備扎實的線性擬合度。
+### 4. Modeling（建模）
 
-##### 圖二：95% 預測區間圖 (Demand Prediction with 95% Prediction Interval)
-![Demand Prediction with 95% Prediction Interval](demand_prediction_interval.png)
-* **統計原理區分**：
-  * **信賴區間 (Confidence Interval, `mean_ci`)**：衡量母體「平均值」的不確定性，區間極窄。
-  * **預測區間 (Prediction Interval, `obs_ci`)**：衡量「個別新觀測值」的不確定性，已納入模型隨機誤差項 $\sigma^2$。本研究遵循評分要求，繪製標準 **Prediction Interval**。
-* **圖表說明**：
-  * **橘色實線 (Predicted)**：模型點預測走勢。
-  * **藍色散佈點 (Actual)**：真實需求量觀測點。
-  * **淺藍色陰影區 (95% Prediction Interval)**：上下限範圍（`obs_ci_lower` 至 `obs_ci_upper`）。
-* **評估分析**：測試樣本絕大多數完全被包覆於 95% 預測區間帶之內，證明模型的不確定性估計具備穩健的信賴度。
+#### 分析目標
 
----
+建模階段要回答兩個問題：第一，多元線性回歸是否優於只預測平均需求的簡單方法；第二，只保留重要性前 20 名特徵後，能否在降低欄位數量的同時維持接近全部特徵模型的預測能力。
 
-### 7. Deployment (模型部署與決策應用)
-* **API 與系統整合**：將訓練完成的 OLS / LinearRegression 模型打包為端點服務，對接 ERP 系統或門市進銷存系統。
-* **安全庫存動態計算**：採購主管在制定補貨計劃時，除了參考點預測值（Predicted Mean），可直接參考 **95% 預測區間上限 (Upper Prediction Interval)** 作為安全庫存水位（Safety Stock），在保障不缺貨的前提下極小化積壓資金。
+#### 實際作法
 
----
+特徵選擇採用 `SelectKBest(score_func=f_regression, k=20)`。`f_regression` 分別計算每個編碼後特徵與 `Demand` 的單變量線性 F-score，再依分數由高至低保留前 20 名。選擇器只在訓練集執行 `fit`，測試資料完全不參與排名。
 
-## 三、GPT 對話與 NotebookLM 摘要
+本研究建立三個比較模型：
 
-> 本小節完全對應評分標準 **「包含 GPT 對話與 NotebookLM 摘要（15%）」**。
+| 模型 | 使用欄位 | 比較目的 |
+|---|---:|---|
+| 平均值基準模型 | 0 | 所有測試資料都預測為訓練集平均值，作為最低比較標準 |
+| 全部特徵線性回歸 | 44 | 檢查完整編碼後資料可達到的線性預測表現 |
+| 前 20 名特徵線性回歸 | 20 | 評估特徵縮減後的效能與可解釋性 |
 
-### 8. GPT Conversation (對話紀錄與連結)
+前 20 名依序包含 `Units Sold`、`Units Ordered`、`Epidemic`、商品類別、促銷、折扣、天氣、庫存、季節及部分 Product ID。模型使用 `sklearn.linear_model.LinearRegression` 產生測試預測；另外使用 `statsmodels.OLS` 擬合相同的前 20 名欄位，以取得整體統計量與預測區間。
 
-* **本地 PDF 對話完整檔**：[`ChatGPT-需求預測與特徵選擇-20261007-1014.pdf`](./ChatGPT-需求預測與特徵選擇-20261007-1014.pdf)（內含 25 頁完整對話輸出、架構討論與提示詞紀錄）
-* **諮詢時間**：2026/10/07 10:14:29
-* **對話討論核心問題與解決方案**：
+#### 階段產出與判讀
 
-| 討論主題 | 遇到的難題 / 原始疑問 | GPT 建議與最終採納策略 |
-| :--- | :--- | :--- |
-| **識別碼處理 (Store / Product ID)** | 是否該保留 ID？能否直接將 ID 編號當作 1, 2, 3 連續數字輸入？ | **不可當連續數字**（會造成大小倍數錯誤假定）。建議以 One-Hot 編碼處理，並搭配 **Feature Selection** 淘汰不顯著品項，維持模型客觀度。 |
-| **數值縮放範圍 (MinMaxScaler)** | Min-Max 是否應該對 One-Hot 欄位或目標變數做？ | **僅對連續數值特徵做 MinMax**；不要對 One-Hot 欄位重複縮放；**Demand 目標變數維持原值**以保留物理單位。 |
-| **虛擬變數陷阱 (Dummy Trap)** | 類別變數做 One-Hot 是否會產生共線性？ | 強調必須加上 **`drop_first=True`**，讓某一類自動作為基準組（Reference Category），消除完全共線性。 |
-| **區間估計計算工具** | `sklearn` 的 `LinearRegression` 無法直接產出預測區間。 | 引入 **`statsmodels.api.OLS`**，使用 `get_prediction().summary_frame(alpha=0.05)` 提取 `obs_ci` 預測區間。 |
-| **作業架構對齊** | 如何兼顧評分標準？ | 建議嚴格按照 **CRISP-DM 六大階段** 與特徵選擇、圖表完整串接，確保評審容易對表給分。 |
+本階段產出三組測試預測、前 20 名特徵清單、F-score 排名及 OLS 統計模型。F-test 是單變量篩選方法，容易理解且符合本次作業目的，但它不會自動處理特徵之間的冗餘，也不代表被選特徵具有因果效果。
 
----
+### 5. Evaluation（評估）
 
-## NotebookLM 研究摘要
+#### 分析目標
 
-本資料集專注於**零售門市庫存與需求預測分析（Retail Store Inventory and Demand Forecasting Analysis）**[1][2]，主要特點與核心分析摘要如下：
+評估階段不只確認模型分數，也要比較模型與基準的差異、檢查特徵選擇造成的效能變化，並利用殘差及預測區間說明模型的不確定性。
 
-1. **資料規模與變數架構**：
-- 資料集包含 **76,000 筆每日銷售紀錄**（涵蓋 2022 年 1 月 1 日至 2024 年 1 月 30 日，共 760 天）[3]。
-- 涵蓋 5 家門市（S001～S005）[5][6]、20 種產品（P0001～P0020）[5][6]、5 大產品品類（雜貨 Groceries、家具 Furniture、服飾 Clothing、玩具 Toys、電子 Electronics）[6][7] 及 4 大區域[7][8]。
-- 主要特點變數包含銷售量（Units Sold）、庫存水準（Inventory Level）、訂購量（Units Ordered）、產品價格、折扣、天氣狀況、促銷活動（Promotion）及流行病影響（Epidemic）等[1][9]。
-1. **探索性資料分析（EDA）重點**：
-- **促銷與折價效應**：促銷活動（Promotion）及折扣（Discount）能顯著提升產品銷售量與需求[10]；而流行病（Epidemic）事件則會對需求產生顯著負面抑低效果[10]。
-- **品類與季節特徵**：在所有產品品類中，**雜貨（Groceries）** 擁有最高的平均需求量與庫存規模[7]，而 **家具（Furniture）** 的平均需求最低[15]。在季節與天氣影響上，**夏季（Summer）** 與 **晴天（Sunny）** 通常帶來更高的平均銷售表現[12]。
-1. **預測模型與評估比對**：
-- 專案分析並比對了多種時間序列與機器學習模型，包括傳統統計模型（ARIMA、SARIMA、ETS、Prophet）[18]、機器學習模型（XGBoost、HistGradientBoosting / HGB、Ridge）[22]、深度學習模型（單變量與多變量 LSTM）[26][27] 以及預訓練時間序列大模型（Chronos-Bolt, Chronos-2）[28][29]。
-- 實驗結果顯示，納入促銷、價格與庫存等外生變數的 **多變量模型（如 HGB、多變量 LSTM）** 以及 **Chronos 與 HGB 的集成模型（Ensemble）** 在多步時間序列預測（Horizon 7、14、28 天）中表現最佳，能大幅降低預測誤差（MAE, RMSE, MAPE%）並精準捕捉需求波動[30]。
+#### 實際作法
 
----
+本研究在相同的 15,200 筆測試資料上計算三項指標：MAE 表示平均絕對誤差，單位與需求量相同；RMSE 對大型誤差給予較高懲罰；R² 表示模型相較平均值能解釋的變異比例。結果如下：
 
-## 四、結論與商業洞察
+| 模型 | MAE | RMSE | R² |
+|---|---:|---:|---:|
+| 平均值基準模型 | 37.04 | 46.99 | -0.0000 |
+| 全部 44 個欄位模型 | 16.27 | 21.81 | 0.7845 |
+| 前 20 名特徵模型 | 16.55 | 22.20 | 0.7768 |
 
-1. **模型表現優異且穩健**：多元線性回歸模型在測試集取得 $R^2 = 78.44\%$、$\text{MAE} = 16.27$ 的準確度，說明 41 個關鍵特徵具備高度預測力。
-2. **核心商業啟示**：
-   * **銷售與進貨是晴雨表**：`Units Sold` 與 `Units Ordered` 是判斷需求量最靈敏的指標。
-   * **促銷刺激顯著**：促銷活動（Promotion）與折扣（Discount）對需求提升具有統計顯著的正向貢獻。
-   * **環境風險韌性**：疫情（Epidemic）帶來 -17.04 位的顯著負向抑制，零售商應在此類外部衝擊發生時主動調降進貨計畫。
-3. **95% 預測區間效益**：預測區間成功包覆絕大部分觀測值，為企業提供了高可靠性的動態庫存防線。
+另外繪製實際值與預測值散點圖、殘差對預測值圖及殘差分布圖。前 20 名模型再以 OLS 計算 95% 預測區間；測試集實際涵蓋率為 95.60%，平均區間寬度為 88.28。
 
----
+#### 階段產出與判讀
 
-## 五、執行環境與重現步驟
+兩個線性回歸模型的誤差都明顯低於平均值基準，表示特徵確實提供預測資訊。前 20 名模型的 R² 比全部特徵模型低約 0.0077，但欄位由 44 個降為 20 個，因此在模型精簡與預測能力之間取得合理平衡。95% 預測區間涵蓋率接近名目值，但平均寬度仍大，說明單筆需求存在明顯不確定性。散點圖與殘差圖也顯示高需求區域仍可能出現較大誤差，因此不能只看 R² 就宣稱模型已適合實務部署。
 
-### 1. 必備 Python 套件環境
-```bash
-pip install pandas numpy matplotlib scikit-learn statsmodels
+### 6. Deployment（部署）
+
+#### 分析目標
+
+Deployment 在本作業中不是建立正式線上服務，而是確保分析能被重現、檢查及交付。若未來要實際部署，還需要定義輸入格式、版本控制、監測方式與重新訓練條件。
+
+#### 實際作法
+
+- 以 `7115056075_hw2.ipynb` 保存完整分析步驟、程式與執行輸出。
+- 以 `results/metrics.json`、`model_comparison.csv` 與 `top20_features.csv` 保存可機器讀取的模型結果。
+- 將實際值與預測值、95% 預測區間及殘差診斷輸出到 `results/`，讓報告與程式使用相同來源。
+- 以 README 記錄資料來源、CRISP-DM 流程、GPT 輔助內容、NotebookLM 摘要、執行方式與研究限制。
+- 保留 Notebook 產生腳本與測試，確認欄位數、切分順序、前 20 名特徵及輸出檔案一致。
+
+#### 階段產出與判讀
+
+目前成果適合課堂作業重現，但不等於已完成商業部署。真實環境應按照日期進行時間切分或滾動驗證，避免未來資料進入訓練集；也應檢查新類別、缺失值、資料漂移與極端需求。若真實資料呈現非線性關係，可在相同時間切分下比較 Ridge、Lasso、HistGradientBoostingRegressor 或時間序列模型。部署後應持續監測 MAE、RMSE、預測區間涵蓋率及資料分布，當表現明顯下降時再重新訓練。
+
+## GPT 輔助內容
+
+GPT 協助整理作業需求、Notebook 結構、資料洩漏防護、前 20 名特徵選擇、模型比較、預測區間、報告排版與驗證。完整對話已匯出為 PDF；所有數值均由 Notebook 實際執行產生，未以對話內容替代實驗結果。
+
+## NotebookLM 摘要
+
+NotebookLM 研究顯示，零售需求預測通常不只比較單一模型，而會依資料型態選擇線性模型、樹模型或時間序列方法。線性回歸容易解釋各欄位與需求的關聯，可作為清楚的基準；Ridge 可降低高度相關特徵造成的係數不穩定，Lasso 可透過稀疏係數進行內嵌式特徵選擇。若需求與促銷、天氣及商品類別之間存在非線性互動，可再比較梯度提升樹。具有日期順序的零售資料則應採時間切分或滾動驗證，避免隨機切分把未來資訊混入訓練資料。模型評估除了 MAE、RMSE 與 R²，也應呈現預測區間，讓管理者同時掌握點預測與缺貨風險。這些研究結果支持本作業以多元線性回歸建立可解釋基準，並把正則化、非線性模型及時間驗證列為後續改進方向。
+
+## 主流或更優方法比較
+
+| 方法 | 優點 | 本作業中的用途或限制 |
+|---|---|---|
+| Ridge Regression | 對高度相關特徵加入 L2 正則化，係數較穩定 | 適合檢查 One-Hot 與連續特徵共線性；需交叉驗證選擇強度 |
+| Lasso Regression | L1 正則化可把部分係數壓成 0 | 可與 F-test 的前 20 名選擇比較；結果受縮放與超參數影響 |
+| HistGradientBoostingRegressor | 能捕捉非線性與特徵交互作用，適合大型表格資料 | 可能提升預測，但解釋性低於線性回歸 |
+| ARIMA／SARIMA | 直接利用時間相依性與季節性 | 應先依商店與商品整理時間序列，不能沿用本次隨機切分 |
+
+以上方法僅做文獻與方法比較，未在本作業中宣稱其測試分數優於目前模型。
+
+## 執行方式
+
+```powershell
+python -m pip install -r requirements.txt
+python scripts/build_hw2_notebook.py
+jupyter nbconvert --to notebook --execute 7115056075_hw2.ipynb --output 7115056075_hw2.ipynb --ExecutePreprocessor.timeout=600
+python -m pytest tests/test_hw2_artifacts.py -q
 ```
 
-### 2. 專案執行步驟
-1. 下載專案資料檔 [`sales_data.csv`](./sales_data.csv)。
-2. 開啟 Jupyter Notebook 檔案 [`dataset.ipynb`](./dataset.ipynb)。
-3. 執行全部儲存格，即可完整重現資料前處理、特徵選擇、多元線性回歸訓練、評估指標計算與兩幅預測圖表。
+執行 Notebook 後，量化結果會寫入 `results/metrics.json`、`results/model_comparison.csv` 與 `results/top20_features.csv`；圖表會寫入 `results/`。
+
+## 參考資料
+
+- [scikit-learn：SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html)
+- [scikit-learn：f_regression](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html)
+- [scikit-learn：LinearRegression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html)
+- [scikit-learn：Linear models（Ridge、Lasso）](https://scikit-learn.org/stable/modules/linear_model.html)
+- [scikit-learn：HistGradientBoostingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html)
+- [statsmodels：PredictionResults.summary_frame](https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.PredictionResults.summary_frame.html)
