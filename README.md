@@ -6,7 +6,7 @@
 
 - 主程式：[`7115056075_hw2.ipynb`](./7115056075_hw2.ipynb)
 - 報告：[`7115056075_hw2_report.pdf`](./7115056075_hw2_report.pdf)
-- GPT 對話：[`ChatGPT-需求預測與特徵選擇-20261007-1014.pdf`](./ChatGPT-需求預測與特徵選擇-20261007-1014.pdf)
+- GPT 對話：[`ChatGPT-需求預測與特徵選擇-20261007-1014.pdf`](./ChatGPT-需求預測與特徵選擇-20261007-1014.pdf) 如果開不起來，可直接下載
 - 原始資料：[`sales_data.csv`](./sales_data.csv)
 - 可重建腳本：[`scripts/build_hw2_notebook.py`](./scripts/build_hw2_notebook.py)
 
