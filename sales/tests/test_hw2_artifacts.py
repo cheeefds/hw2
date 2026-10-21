@@ -1,5 +1,5 @@
 import csv
-import importlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -9,6 +9,14 @@ import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_sales_files_are_scoped_to_sales_directory():
+    assert ROOT.name == "sales"
+    assert (ROOT / "sales_data.csv").exists()
+    assert (ROOT / "7115056075_hw2.ipynb").exists()
+    assert (ROOT / "results" / "metrics.json").exists()
+    assert (ROOT / "README.md").exists()
 
 
 def test_source_dataset_contract():
@@ -41,7 +49,11 @@ def test_source_dataset_contract():
 
 
 def _build_notebook_in(tmp_path):
-    module = importlib.import_module("scripts.build_hw2_notebook")
+    module_path = ROOT / "scripts" / "build_hw2_notebook.py"
+    spec = importlib.util.spec_from_file_location("sales_build_hw2_notebook", module_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
     output_path = tmp_path / "7115056075_hw2.ipynb"
     module.build_notebook(output_path)
     return nbformat.read(output_path, as_version=4)

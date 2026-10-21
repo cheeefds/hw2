@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const outputDirectory = resolve('out');
@@ -12,8 +12,29 @@ const expectedPrefix = isGitHubPagesBuild && !isUserOrOrganizationSite ? `/${rep
 assert.ok(existsSync(indexPath), `Expected export artifact at ${indexPath}`);
 
 const html = readFileSync(indexPath, 'utf8');
+const chunksDirectory = resolve(outputDirectory, '_next', 'static', 'chunks');
+const chunkText = existsSync(chunksDirectory)
+  ? readdirSync(chunksDirectory, { recursive: true })
+      .filter((entry) => String(entry).endsWith('.js'))
+      .map((entry) => readFileSync(resolve(chunksDirectory, String(entry)), 'utf8'))
+      .join('\n')
+  : '';
+const exportedText = `${html}\n${chunkText}`;
 
-assert.ok(html.includes('7115056075 HW2') || html.includes('零售需求'), 'Index HTML should contain project title');
+assert.ok(exportedText.includes('Sales：零售需求預測'), 'Export should contain the Sales problem option');
+assert.ok(exportedText.includes('Housing：房價預測'), 'Export should contain the Housing problem option');
+assert.ok(exportedText.includes('選擇分析問題'), 'Export should contain an accessible problem selector label');
+
+for (const problem of ['sales', 'housing']) {
+  for (const imageName of [
+    'actual_vs_predicted.png',
+    'prediction_interval.png',
+    'residual_diagnostics.png',
+  ]) {
+    const imagePath = resolve(outputDirectory, 'images', problem, imageName);
+    assert.ok(existsSync(imagePath), `Expected ${problem} image at ${imagePath}`);
+  }
+}
 
 if (expectedPrefix) {
   assert.ok(

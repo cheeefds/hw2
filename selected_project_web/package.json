@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "verify:config": "node scripts/verify-github-pages-config.mjs",
-    "verify:export": "node scripts/verify-static-export.mjs"
+    "verify:export": "node scripts/verify-static-export.mjs",
+    "verify:interaction": "node scripts/verify-interactions.mjs"
   },
   "dependencies": {
     "next": "14.2.15",
@@ -19,6 +20,7 @@
     "@types/node": "^20.16.11",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
+    "playwright-core": "^1.56.1",
     "typescript": "^5.6.2"
   }
 }
